@@ -51,7 +51,7 @@ training_preprocessed<- training[training_subset$Resample1,]
 validation_preprocessed<- training[training_subset$Resample2,]
 ```
 
-* Predictors that correspond to zero information in the testing data were removed from the preprocessed training data:
+* Predictors corresponding to zero information in the testing data were removed from the preprocessed training data:
 
 ```{r, echo=TRUE}
 na_list<- c()
@@ -65,7 +65,7 @@ useless_column_vectors<- match(useless_columns, colnames(training_preprocessed))
 training_preprocessed<- training_preprocessed[, -useless_column_vectors]
 ```
 
-* The following predictors showing close to zero variance were removed from the preprocessed training data:
+* Predictors showing close to zero variance were removed from the preprocessed training data:
 
 ```{r, echo=FALSE}
 bad_predictors<- nearZeroVar(training_preprocessed)
@@ -100,7 +100,7 @@ training_preprocessed<- training_preprocessed[, -(1:6)]
 training_preprocessed$classe<- as.factor(training_preprocessed$classe)
 ```
 
-* The preceding preprocessing steps were repeated for the validation data set and testing data set.
+* The preceding preprocessing steps were repeated for the validation data set and testing data set:
 
 ```{r, echo=FALSE}
 # Validation data preprocessing
