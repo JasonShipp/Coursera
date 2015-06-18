@@ -1,4 +1,4 @@
-# Machine Learning Project: Prediction of the manner in which participants carry out Unilateral Dumbbell Biceps Curls"    
+# Machine Learning Project: Prediction of the manner in which participants carry out Unilateral Dumbbell Biceps Curls    
 ##Jason Shipp
 ##Thursday, June 18, 2015
 
