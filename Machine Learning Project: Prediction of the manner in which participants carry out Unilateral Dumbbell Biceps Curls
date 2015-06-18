@@ -1,0 +1,212 @@
+---
+title: "Machine Learning Project: Prediction of the manner in which participants carry out Unilateral Dumbbell Biceps Curls"  
+author: "Jason Shipp"
+date: "Tuesday, June 16, 2015"
+output: html_document
+---
+  
+### Introduction
+
+The aim of this project was to use data from accelerometers on the belt, forearm, arm and dumbell of 6 participants to train a machine learning algorithm in R to predict
+the manner in which the participants carried out the exercises. This prediction model was then used to predict the exercise fashion of 20 different test cases, as carried
+out by the same 6 participants.
+
+Six participants were asked to perform Unilateral Dumbbell Biceps Curls in five different fashions: 
+
+* exactly according to the specification (Class A) (benchmark)
+* throwing the elbows to the front (Class B)
+* lifting the dumbbell only halfway (Class C) 
+* lowering the dumbbell only halfway (Class D)
+* throwing the hips to the front (Class E). 
+
+The participants were six males aged 20-28 years, with little weight lifting experience.  
+
+### Methodology 1: Getting the data
+
+* The necessary R packages were installed:
+
+```{r, echo=TRUE, warning=FALSE, error=FALSE, message=FALSE} 
+library('caret')
+library('gbm')
+library('plyr')
+library('klaR')
+library('randomForest')
+```
+* The data was read from the following source:
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H.
+Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13).
+Stuttgart, Germany: ACM SIGCHI, 2013.
+
+```{r, eval=FALSE, echo=TRUE} 
+training<-(read.csv(file.path("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"), stringsAsFactors=FALSE))
+testing<- (read.csv(file.path("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"), stringsAsFactors=FALSE))
+```
+
+```{r, eval=TRUE, echo=FALSE} 
+training<-(read.csv(file.path("C:/Users/Jason.shipp/Downloads/pml-training.csv"), stringsAsFactors=FALSE))
+testing<- (read.csv(file.path("C:/Users/Jason.shipp/Downloads/pml-testing.csv"), stringsAsFactors=FALSE))
+```  
+
+### Methodology 2: Preprocessing the data (using the caret package in R)
+
+* The training data set was sub-sampled twice, into a training and validation set, to make the data more manageable for training and validation in R. 
+* 20% of the original data set was extracted for each sub-sample; equating to approximately 4000 rows in each:
+
+```{r, echo=TRUE}
+set.seed(111)
+training_subset<- createDataPartition(y=training$classe, times=2, 0.2)
+training_preprocessed<- training[training_subset$Resample1,]
+validation_preprocessed<- training[training_subset$Resample2,]
+```
+
+* Predictors that correspond to zero information in the testing data were removed from the preprocessed training data:
+
+```{r, echo=TRUE}
+na_list<- c()
+for (column in 1:length(testing[1,]))
+{
+temp<- sum(is.na(testing[,column])) / length(testing[,column])
+na_list<- c(na_list, temp)
+}
+useless_columns<- colnames(testing)[which(na_list==1)]
+useless_column_vectors<- match(useless_columns, colnames(training_preprocessed))
+training_preprocessed<- training_preprocessed[, -useless_column_vectors]
+```
+
+* The following predictors showing close to zero variance were removed from the preprocessed training data:
+
+```{r, echo=TRUE}
+nearZeroVar(training_preprocessed, saveMetrics= TRUE)
+```
+```{r, echo=FALSE}
+bad_predictors<- nearZeroVar(training_preprocessed)
+training_preprocessed<- training_preprocessed[, -bad_predictors]
+```
+
+* The following normalisation functions were applied to the preprocessed training data:
+	
+	+ center: subtracting the column means from each numerical data point.
+	+ scale: dividing each numerical data point by the column standard deviations.
+	+ BoxCox: transforming numerical columns to make the data look more normally distributed.
+	+ knnImpute: filling in each NA instance with the average of its k Nearest Neighbours.
+
+```{r, echo=TRUE}
+for (column in 1:length(training_preprocessed[1,])-1)
+{
+ifelse(is.numeric(training_preprocessed[,column]), 
+(preProcess(as.data.frame(training_preprocessed[,column]), method=c("center", "scale", "BoxCox", "knnImpute"))),
+(training_preprocessed[,column]))
+}
+```
+* Fields containing data for identification only were removed from the preprocessed training data (user_name, raw_timestamp_part_1, 
+raw_timestamp_part_2, cvtd_timestamp, new_window, num_window):
+
+```{r, echo=TRUE}
+training_preprocessed<- training_preprocessed[, -(1:6)]
+```
+
+* Finally, the outcome variable (classe) was turned into a factor variable:
+
+```{r, echo=TRUE}
+training_preprocessed$classe<- as.factor(training_preprocessed$classe)
+```
+
+* The preceding preprocessing steps were repeated for the validation data set and testing data set.
+
+```{r, echo=FALSE}
+# validation data preprocessing
+
+useless_column_vectors<- match(useless_columns, colnames(validation_preprocessed))
+validation_preprocessed<- validation_preprocessed[, -useless_column_vectors]
+
+bad_predictors_data<- nearZeroVar(validation_preprocessed, saveMetrics= TRUE)
+bad_predictors<- nearZeroVar(validation_preprocessed)
+validation_preprocessed<- validation_preprocessed[, -bad_predictors] 
+
+for (column in 1:length(validation_preprocessed[1,])-1)
+{
+ifelse(is.numeric(validation_preprocessed[,column]), 
+(preProcess(as.data.frame(validation_preprocessed[,column]), method=c("center", "scale", "BoxCox", "knnImpute"))),
+(validation_preprocessed[,column]))
+}
+
+validation_preprocessed<- validation_preprocessed[, -(1:6)]
+
+validation_preprocessed$classe<- as.factor(validation_preprocessed$classe)
+
+# Testing data preprocessing
+
+useless_column_vectors<- match(useless_columns, colnames(testing))
+testing_preprocessed<- testing[, -useless_column_vectors]
+
+bad_predictors_data<- nearZeroVar(testing_preprocessed, saveMetrics= TRUE)
+bad_predictors<- nearZeroVar(testing_preprocessed)
+testing_preprocessed<- testing_preprocessed[, -bad_predictors] 
+
+for (column in 5:length(testing_preprocessed[1,]))
+{
+ifelse(is.numeric(testing_preprocessed[,column]), 
+(preProcess(as.data.frame(testing_preprocessed[,column]), method=c("center", "scale", "BoxCox", "knnImpute"))),
+(testing_preprocessed[,column]))
+}
+
+testing_preprocessed<- testing_preprocessed[, -(1:6)]
+```  
+
+### Methodology 3: Building a stacked prediction model for the classe variable
+
+* The following 3 models were built separately around the preprocessed training data:
+
+1. gbm: Generalised Boosted Regression Model
+2. rf: Random Forest classification Model
+3. lda: Linear Discriminant Analysis Model
+
+```{r, echo=TRUE}
+model_gbm<- train(classe~., method="gbm", data= training_preprocessed)
+model_rf<- train(classe~., method="rf", data= training_preprocessed)
+model_lda<- train(classe~., method="lda", data= training_preprocessed)
+```
+
+* These models were cross-validated one at a time against the preprocessed validation data, in order to measure their accuracies using confusion matrices:
+
+```{r, echo=FALSE}
+pred_gbm<- predict(model_gbm, validation_preprocessed[,-(match('classe', colnames(validation_preprocessed)))])
+pred_rf<- predict(model_rf, validation_preprocessed[,-(match('classe', colnames(validation_preprocessed)))])
+pred_lda<- predict(model_lda, validation_preprocessed[,-(match('classe', colnames(validation_preprocessed)))])
+```
+```{r, echo=TRUE}
+confusionMatrix(pred_gbm, validation_preprocessed$classe)
+confusionMatrix(pred_lda, validation_preprocessed$classe)
+confusionMatrix(pred_rf, validation_preprocessed$classe)
+```
+
+* A new data frame was then built, composed of the 3 separate model predictions of the classe variable, and the true classe variable.
+* A new Random Forest Classification Model was then built around this data frame.
+* This stacked model was cross-validated against the true classe variable (from the preprocessed validation data), in order to measure its accuracy
+using a confusion matrix; the accuracy was found to be >98%:
+
+```{r, echo=TRUE}
+predDF<- data.frame(pred_gbm, pred_rf, pred_lda, classe=validation_preprocessed$classe)
+model_combined<- train(classe~., method="rf", data=predDF)
+pred_combined<- predict(model_combined, predDF[,-(match('classe', colnames(predDF)))])
+confusionMatrix(pred_combined, predDF$classe)
+```
+
+* __We can therefore expect the out of sample error accuracy of this stacked model to be ~98%.__    
+
+### Results: Prediction of the classe in the testing data set
+
+* The final models were run against the testing data, in order to predict the data's 20 classe variables:
+
+```{r, echo=TRUE}
+pred_gbm<- predict(model_gbm, testing_preprocessed)
+pred_rf<- predict(model_rf, testing_preprocessed)
+pred_lda<- predict(model_lda, testing_preprocessed)
+pred_combined<- predict(model_combined, testing_preprocessed)
+
+* The final predictions were put into a data frame.
+* The predictions given by the combined model (pred_combined) were given priority in cases where the other model predictions did not agree with each other:
+
+prediction_results<- data.frame(problem_id=testing_preprocessed$problem_id, pred_gbm, pred_rf, pred_lda, pred_combined)
+prediction_results
+```
