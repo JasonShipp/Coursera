@@ -63,13 +63,18 @@ img {
 <div id="header">
 <h1 class="title">Machine Learning Project: Prediction of the manner in which participants carry out Unilateral Dumbbell Biceps Curls</h1>
 <h4 class="author"><em>Jason Shipp</em></h4>
-<h4 class="date"><em>Tuesday, June 16, 2015</em></h4>
+<h4 class="date"><em>Thursday, June 18, 2015</em></h4>
 </div>
 
 
 <div id="introduction" class="section level3">
 <h3>Introduction</h3>
-<p>The aim of this project was to use data from accelerometers on the belt, forearm, arm and dumbell of 6 participants to train a machine learning algorithm in R to predict the manner in which the participants carried out biceps curl exercises. This prediction model was then used to predict the exercise fashion of 20 different test cases, as carried out by the same 6 participants.</p>
+<p>The aims of this project were to:</p>
+<ol style="list-style-type: decimal">
+<li><p>Use data from accelerometers on the belt, forearm, arm and dumbell of 6 participants to train a machine learning algorithm in R to predict the manner in which the participants carried out biceps curl exercises.</p></li>
+<li><p>Use the prediction model to predict the exercise fashion of 20 different test cases, as carried out by the same 6 participants.</p></li>
+</ol>
+<br/>
 <p>Six participants were asked to perform Unilateral Dumbbell Biceps Curls in five different fashions:</p>
 <ul>
 <li>exactly according to the specification (Class A) (benchmark)</li>
@@ -107,7 +112,7 @@ training_subset&lt;- createDataPartition(y=training$classe, times=2, 0.2)
 training_preprocessed&lt;- training[training_subset$Resample1,]
 validation_preprocessed&lt;- training[training_subset$Resample2,]</code></pre>
 <ul>
-<li>Predictors that correspond to zero information in the testing data were removed from the preprocessed training data:</li>
+<li>Predictors corresponding to zero information in the testing data were removed from the preprocessed training data:</li>
 </ul>
 <pre class="r"><code>na_list&lt;- c()
 for (column in 1:length(testing[1,]))
@@ -119,7 +124,7 @@ useless_columns&lt;- colnames(testing)[which(na_list==1)]
 useless_column_vectors&lt;- match(useless_columns, colnames(training_preprocessed))
 training_preprocessed&lt;- training_preprocessed[, -useless_column_vectors]</code></pre>
 <ul>
-<li>The following predictors showing close to zero variance were removed from the preprocessed training data:</li>
+<li>The following predictors showing close to zero variance (nzv column = TRUE) were removed from the preprocessed training data:</li>
 </ul>
 <pre class="r"><code>nearZeroVar(training_preprocessed, saveMetrics= TRUE)</code></pre>
 <pre><code>##                      freqRatio percentUnique zeroVar   nzv
@@ -217,13 +222,13 @@ ifelse(is.numeric(training_preprocessed[,column]),
 </ul>
 <ol style="list-style-type: decimal">
 <li>gbm: Generalised Boosted Regression Model</li>
-<li>rf: Random Forest classification Model</li>
+<li>rf: Random Forest Classification Model</li>
 <li>lda: Linear Discriminant Analysis Model</li>
 </ol>
-<pre class="r"><code>model_gbm&lt;- train(classe~., method=&quot;gbm&quot;, data= training_preprocessed)</code></pre>
 
 <pre class="r"><code>model_rf&lt;- train(classe~., method=&quot;rf&quot;, data= training_preprocessed)
-model_lda&lt;- train(classe~., method=&quot;lda&quot;, data= training_preprocessed)</code></pre>
+model_lda&lt;- train(classe~., method=&quot;lda&quot;, data= training_preprocessed)
+model_gbm&lt;- train(classe~., method=&quot;gbm&quot;, data= training_preprocessed)</code></pre>
 <ul>
 <li>These models were cross-validated one at a time against the preprocessed validation data, in order to measure their accuracies using confusion matrices:</li>
 </ul>
@@ -368,7 +373,7 @@ confusionMatrix(pred_combined, predDF$classe)</code></pre>
 </ul>
 </div>
 <div id="results-prediction-of-the-classe-in-the-testing-data-set" class="section level3">
-<h3>Results: Prediction of the classe in the testing data set</h3>
+<h3>Results: Prediction of the classe variable in the testing data set</h3>
 <ul>
 <li>The final models were run against the testing data, in order to predict the data’s 20 classe variables:</li>
 </ul>
