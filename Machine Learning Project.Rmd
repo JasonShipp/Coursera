@@ -1,11 +1,11 @@
 # Machine Learning Project: Prediction of the manner in which participants carry out Unilateral Dumbbell Biceps Curls    
 ##Jason Shipp
 ##Thursday, June 18, 2015
-
+  
 ### Introduction
 
 The aim of this project was to use data from accelerometers on the belt, forearm, arm and dumbell of 6 participants to train a machine learning algorithm in R to predict
-the manner in which the participants carried out the exercises. This prediction model was then used to predict the exercise fashion of 20 different test cases, as carried
+the manner in which the participants carried out biceps curl exercises. This prediction model was then used to predict the exercise fashion of 20 different test cases, as carried
 out by the same 6 participants.
 
 Six participants were asked to perform Unilateral Dumbbell Biceps Curls in five different fashions: 
@@ -200,10 +200,12 @@ pred_gbm<- predict(model_gbm, testing_preprocessed)
 pred_rf<- predict(model_rf, testing_preprocessed)
 pred_lda<- predict(model_lda, testing_preprocessed)
 pred_combined<- predict(model_combined, testing_preprocessed)
+```
 
 * The final predictions were put into a data frame.
 * The predictions given by the combined model (pred_combined) were given priority in cases where the other model predictions did not agree with each other:
 
+```{r, echo=TRUE}
 prediction_results<- data.frame(problem_id=testing_preprocessed$problem_id, pred_gbm, pred_rf, pred_lda, pred_combined)
 prediction_results
 ```
