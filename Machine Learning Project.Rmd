@@ -150,7 +150,7 @@ testing_preprocessed<- testing_preprocessed[, -(1:6)]
 * The following 3 models were built separately around the preprocessed training data:
 
 1. gbm: Generalised Boosted Regression Model
-2. rf: Random Forest classification Model
+2. rf: Random Forest Classification Model
 3. lda: Linear Discriminant Analysis Model
 
 ```{r, echo=TRUE}
