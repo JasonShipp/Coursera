@@ -186,7 +186,7 @@ confusionMatrix(pred_combined, predDF$classe)
 
 * __We can therefore expect the out of sample error accuracy of this stacked model to be ~98%.__    
 
-### Results: Prediction of the classe in the testing data set
+### Results: Prediction of the classe variable in the testing data set
 
 * The final models were run against the testing data, in order to predict the data's 20 classe variables:
 
