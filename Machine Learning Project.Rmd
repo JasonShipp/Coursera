@@ -8,7 +8,7 @@ The aims of this project were to:
 
 1. Use data from accelerometers on the belt, forearm, arm and dumbell of 6 participants to train a machine learning algorithm in R to predict the manner in which the participants carried out biceps curl exercises.
 
-2. Use The prediction model to predict the exercise fashion of 20 different test cases, as carried
+2. Use the prediction model to predict the exercise fashion of 20 different test cases, as carried
 out by the same 6 participants.
 
 Six participants were asked to perform Unilateral Dumbbell Biceps Curls in five different fashions: 
