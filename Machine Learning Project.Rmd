@@ -39,11 +39,6 @@ training<-(read.csv(file.path("https://d396qusza40orc.cloudfront.net/predmachlea
 testing<- (read.csv(file.path("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"), stringsAsFactors=FALSE))
 ```
 
-```{r, eval=TRUE, echo=FALSE} 
-training<-(read.csv(file.path("C:/Users/Jason.shipp/Downloads/pml-training.csv"), stringsAsFactors=FALSE))
-testing<- (read.csv(file.path("C:/Users/Jason.shipp/Downloads/pml-testing.csv"), stringsAsFactors=FALSE))
-```  
-
 ### Methodology 2: Preprocessing the data (using the caret package in R)
 
 * The training data set was sub-sampled twice, into a training and validation set, to make the data more manageable for training and validation in R. 
@@ -72,9 +67,6 @@ training_preprocessed<- training_preprocessed[, -useless_column_vectors]
 
 * The following predictors showing close to zero variance were removed from the preprocessed training data:
 
-```{r, echo=TRUE}
-nearZeroVar(training_preprocessed, saveMetrics= TRUE)
-```
 ```{r, echo=FALSE}
 bad_predictors<- nearZeroVar(training_preprocessed)
 training_preprocessed<- training_preprocessed[, -bad_predictors]
@@ -111,7 +103,7 @@ training_preprocessed$classe<- as.factor(training_preprocessed$classe)
 * The preceding preprocessing steps were repeated for the validation data set and testing data set.
 
 ```{r, echo=FALSE}
-# validation data preprocessing
+# Validation data preprocessing
 
 useless_column_vectors<- match(useless_columns, colnames(validation_preprocessed))
 validation_preprocessed<- validation_preprocessed[, -useless_column_vectors]
