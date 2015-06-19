@@ -74,7 +74,6 @@ img {
 <li><p>Use data from accelerometers on the belt, forearm, arm and dumbell of 6 participants to train a machine learning algorithm in R to predict the manner in which the participants carried out biceps curl exercises.</p></li>
 <li><p>Use the prediction model to predict the exercise fashion of 20 different test cases, as carried out by the same 6 participants.</p></li>
 </ol>
-<br/>
 <p>Six participants were asked to perform Unilateral Dumbbell Biceps Curls in five different fashions:</p>
 <ul>
 <li>exactly according to the specification (Class A) (benchmark)</li>
@@ -124,7 +123,7 @@ useless_columns&lt;- colnames(testing)[which(na_list==1)]
 useless_column_vectors&lt;- match(useless_columns, colnames(training_preprocessed))
 training_preprocessed&lt;- training_preprocessed[, -useless_column_vectors]</code></pre>
 <ul>
-<li>The following predictors showing close to zero variance (nzv column = TRUE) were removed from the preprocessed training data:</li>
+<li>The following predictors showing close to zero variance (nzv column = TRUE) were removed from the preprocessed training data :</li>
 </ul>
 <pre class="r"><code>nearZeroVar(training_preprocessed, saveMetrics= TRUE)</code></pre>
 <pre><code>##                      freqRatio percentUnique zeroVar   nzv
@@ -188,6 +187,8 @@ training_preprocessed&lt;- training_preprocessed[, -useless_column_vectors]</cod
 ## magnet_forearm_y      1.111111   35.19225872   FALSE FALSE
 ## magnet_forearm_z      1.071429   30.15024191   FALSE FALSE
 ## classe                1.468421    0.12732366   FALSE FALSE</code></pre>
+<pre class="r"><code>bad_predictors&lt;- nearZeroVar(training_preprocessed)
+training_preprocessed&lt;- training_preprocessed[, -bad_predictors]</code></pre>
 <ul>
 <li><p>The following normalisation functions were applied to the preprocessed training data:</p>
 <ul>
@@ -212,7 +213,7 @@ ifelse(is.numeric(training_preprocessed[,column]),
 </ul>
 <pre class="r"><code>training_preprocessed$classe&lt;- as.factor(training_preprocessed$classe)</code></pre>
 <ul>
-<li>The preceding preprocessing steps were repeated for the validation data set and testing data set:</li>
+<li>The preceding preprocessing steps were repeated for the validation data set and testing data set.</li>
 </ul>
 </div>
 <div id="methodology-3-building-a-stacked-prediction-model-for-the-classe-variable" class="section level3">
@@ -225,10 +226,9 @@ ifelse(is.numeric(training_preprocessed[,column]),
 <li>rf: Random Forest Classification Model</li>
 <li>lda: Linear Discriminant Analysis Model</li>
 </ol>
-
-<pre class="r"><code>model_rf&lt;- train(classe~., method=&quot;rf&quot;, data= training_preprocessed)
-model_lda&lt;- train(classe~., method=&quot;lda&quot;, data= training_preprocessed)
-model_gbm&lt;- train(classe~., method=&quot;gbm&quot;, data= training_preprocessed)</code></pre>
+<pre class="r"><code>model_gbm&lt;- train(classe~., method=&quot;gbm&quot;, data= training_preprocessed)
+model_rf&lt;- train(classe~., method=&quot;rf&quot;, data= training_preprocessed)
+model_lda&lt;- train(classe~., method=&quot;lda&quot;, data= training_preprocessed)</code></pre>
 <ul>
 <li>These models were cross-validated one at a time against the preprocessed validation data, in order to measure their accuracies using confusion matrices:</li>
 </ul>
@@ -372,7 +372,7 @@ confusionMatrix(pred_combined, predDF$classe)</code></pre>
 <li><strong>We can therefore expect the out of sample error accuracy of this stacked model to be ~98%.</strong></li>
 </ul>
 </div>
-<div id="results-prediction-of-the-classe-in-the-testing-data-set" class="section level3">
+<div id="results-prediction-of-the-classe-variable-in-the-testing-data-set" class="section level3">
 <h3>Results: Prediction of the classe variable in the testing data set</h3>
 <ul>
 <li>The final models were run against the testing data, in order to predict the data’s 20 classe variables:</li>
