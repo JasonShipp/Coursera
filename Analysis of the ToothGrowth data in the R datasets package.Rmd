@@ -1,0 +1,164 @@
+---
+title: "Analysis of the ToothGrowth data in the R datasets package"
+author: "Jason Shipp"
+date: "Saturday, February 07, 2015"
+output: html_document
+---
+
+
+### Introduction
+
+The ToothGrowth data in the R datasets package contains data on the response length of teeth in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, or 2 mg)
+with each of two delivery methods (orange juice or ascorbic acid).
+
+The ToothGrowth data frame contains 60 observations of these 3 variables:
+
+* [,1]	len: numeric; Tooth length in mm
+
+* [,2]	supp: factor; Supplement type (VC or OJ)
+
+* [,3]	dose: numeric; Dose in milligrams
+
+
+### Data summary
+
+
+Below is a summary of the unprocessed tooth data.
+
+```{r kable, echo = TRUE, message = FALSE, warning = FALSE}
+library(knitr)
+ToothGrowth<- as.data.frame(ToothGrowth)
+kable(summary(ToothGrowth))
+```
+
+Below is a summary of the unprocessed tooth data split by Supplement type; ascorbic acid (top) and orange juice (bottom).
+
+```{r cache= FALSE}
+library(knitr)
+kable(summary(subset(ToothGrowth, supp=='VC')))
+```
+
+```{r echo = TRUE}
+library(knitr)
+kable(summary(subset(ToothGrowth, supp=='OJ')))
+```
+
+Below is a histogram of the tooth lengths.
+
+
+```{r fig.width = 7, fig.height = 6, echo = FALSE}
+hist(ToothGrowth$len, main = "Histogram of tooth lengths", xlab = "Frequency", ylab = "Tooth length in mm")
+```
+
+Below is a table summarising the tooth data by the mean tooth length per supplement and dose.
+
+```{r echo = TRUE, message = FALSE, warning = FALSE}
+library(doBy)
+summaryBy(len ~ supp + dose, data = ToothGrowth, FUN = mean, keep.names=TRUE)
+```
+
+Below is a clustered bar graph representing the data in the above summary table.
+
+```{r fig.width = 7, fig.height = 6, message = FALSE, warning = FALSE}
+library(doBy)
+ToothGrowth_summary<- summaryBy(len ~ supp + dose, data = ToothGrowth, FUN = mean, keep.names=TRUE)
+library(ggplot2)
+ggplot(ToothGrowth_summary, aes(x = dose, y= len)) + geom_bar(aes(fill = supp), position = "dodge", stat= 'identity') + labs(y = "Average tooth length in mm") + labs(x = "Supplement dose") +
+ggtitle("Summary of ToothGrowth data") + theme(axis.title.x = element_text(size=20), axis.text.x = element_text(size=20)) + 
+theme(axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20)) + labs(fill = "Supplement") +
+theme(legend.text = element_text(size=20)) + theme(legend.title = element_text(size=20)) 
+```
+
+The 0.9, 0.95 and 0.99 quantiles of the tooth lengths are calculated below.
+
+```{r echo = TRUE}
+quantile(ToothGrowth$len, c(0.9, 0.95, 0.99))
+```
+
+### Confidence intervals for the mean population tooth length for different supplements and doses
+
+Assuming a **t-distribution**, the 95% confidence interval for the mean population tooth length is calculated below.
+
+```{r echo = TRUE}
+ToothGrowth_mean<- mean(ToothGrowth$len)
+ToothGrowth_sd<- sd(ToothGrowth$len)
+n<- length(ToothGrowth$len)
+ToothGrowth_mean + (c(-1,1) * (qt(0.975, n-1)) * (ToothGrowth_sd/(sqrt(n))))
+```
+
+Assuming a **normal distribution**, the 95% confidence interval for the mean population tooth length is calculated below.
+
+```{r echo = TRUE}
+ToothGrowth_mean + (c(-1,1) * (qnorm(0.975)) * (ToothGrowth_sd/(sqrt(n))))
+```
+
+The above results of the 95% confidence interval using a normal distribution and t-distribution agree reasonably well with each other (to the nearest
+whole number). We will therefore continue our analysis looking at differences in tooth growth by assuming a normal distribution.
+
+
+Below are the 95% confidence intervals for the mean population tooth length for different doses of **ascorbic acid** (0.5, 1.0 and 2.0 milligrams).
+
+
+```{r echo = TRUE}
+x<- (subset(ToothGrowth, supp == 'VC' & dose == 0.5))$len
+print(mean(x) + c(-1,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+
+x<- (subset(ToothGrowth, supp == 'VC' & dose == 1.0))$len
+print(mean(x) + c(-1,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+
+x<- (subset(ToothGrowth, supp == 'VC' & dose == 2.0))$len
+print(mean(x) + c(-1,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+```
+
+
+Below are the 95% confidence intervals for the mean population tooth length for different doses of **orange juice** (0.5, 1.0 and 2.0 milligrams).
+
+```{r echo = TRUE}
+x<- (subset(ToothGrowth, supp == 'OJ' & dose == 0.5))$len
+print(mean(x) + c(-1,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+
+x<- (subset(ToothGrowth, supp == 'OJ' & dose == 1.0))$len
+print(mean(x) + c(-1,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+
+x<- (subset(ToothGrowth, supp == 'OJ' & dose == 2.0))$len
+print(mean(x) + c(-1,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+```
+
+The above results indicate that both increasing dosage and using orange juice in preference to ascorbic acid increase mean tooth length.
+We can now use hypothesis tests to determine whether these differences in tooth length are significant.
+
+
+
+### Hypothesis tests for determining whether the differences in mean tooth length for different supplements and doses are significant
+
+
+The dose column of the ToothGrowth data frame has been simplified to two groups; "0-1" and "2", in order to make the column binary (only two groups).
+
+```{r}
+ToothGrowth[c("dose_simplified")]<- ifelse(ToothGrowth$dose <= 1, '0-1', '2')
+```
+
+T-tests have then been applied to the tooth lengths, to determine whether the lengths vary significantly by 1) supplement type and 2) supplement dosage. 
+
+```{r echo = TRUE}
+t.test(ToothGrowth$len ~ ToothGrowth$supp, paired=FALSE)
+t.test(ToothGrowth$len ~ ToothGrowth$dose_simplified, paired=FALSE)
+```
+
+### Conclusions and Assumptions
+
+The supplements t-test shows that the difference in mean tooth length between the two supplements is not quite 2 standard deviations, 
+giving a p-value for the observed difference occurring by chance of just over 0.05; we therefore cannot reject the null hypothesis that the true difference 
+in means is equal to 0. We therefore cannot be 95% certain that supplement type has a significant effect on tooth length.
+
+The dosage t-test shows that the difference in mean tooth length between the two doses is over 2 standard deviations, 
+giving a p-value for the observed difference occurring by chance of under 0.05; we therefore can reject the null hypothesis that the true difference 
+in means is equal to 0. We therefore can be 95% certain that dosage has a significant positive effect on tooth length.
+
+The assumptions for these t-tests are: 
+
+* Tooth length shows a normal distribution
+
+* Tooth length is a continuous variable
+
+* Observations are independent of each other
