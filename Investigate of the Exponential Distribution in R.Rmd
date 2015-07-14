@@ -1,0 +1,154 @@
+---
+title: "Investigation of the Exponential Distribution in R"
+author: "Jason Shipp"
+date: "Saturday, February 07, 2015"
+output: html_document
+---
+
+
+### Introduction
+
+
+In this project, we will investigate the exponential distribution in R and compare it with the Central Limit Theorem. To achieve this, we will simulate 1000 groups of 40
+random samples from the distribution, and take the mean of each of these simulations. We will then analyse the properties of the distribution of the means of these simulations.
+
+The aims of the investigation are to:
+
+* Show the simulated sample mean approximates the theoretical mean of the distribution.
+
+* Show the simulated sample variance approximates the theoretical variance of the distribution.
+
+* Show that the distribution is approximately normal.
+
+The exponential distribution with rate lambda (λ) has density:
+f(x) = λ {e}^{- λ x} for x ≥ 0.
+
+The mean of the exponential distribution is 1/lambda, and the standard deviation is also 1/lambda. We will set lambda = 0.2 for all our simulations.
+
+Below is a plot of the exponential distribution for 0<=x<=5:
+
+```{r, echo= TRUE}
+lambda<- 1
+exp_dist_table<- as.data.frame(seq(from = 0, to = 5, by = 0.01))
+names(exp_dist_table)[names(exp_dist_table)=="seq(from = 0, to = 5, by = 0.01)"] <- "x"
+exp_dist_table[c("f(x)")]<- lambda  * (exp(-lambda * exp_dist_table$"x"))
+plot(exp_dist_table, type = "l", lwd=2, col='red', main = "Exponential distribution curve")
+```
+
+### Methodology
+
+
+The R function "rexp(n, lambda)" has been used to carry out 1000 simulations of the exponential distribution. Each simulation pulls a random sample of 40 
+exponentials from the distribution. The mean and variance has been taken for each simulation row using the R functions "apply", "mean" and "var".
+Assuming the simulation means are normally distributed, each mean has then been transformed to units of standard deviation with respect to the normal distribution using:
+(mean - (population mean)) / (population standard deviation / sqrt(simulation samples)).
+
+```{r, cache= FALSE}
+n<- 40
+lambda<- 0.2
+pop_mean<- 1/lambda
+pop_sd<- 1/lambda
+
+simulations<- as.data.frame(as.numeric())
+for(i in seq(1:1000))
+{simulations<- rbind(simulations, c(rexp(n, lambda)))
+}
+```
+
+```{r, echo= FALSE}
+row.names(simulations)<- paste("simulation_", seq(1:length(simulations[,1])))
+colnames(simulations)<- paste("n", seq(1:length(simulations[1,])), sep="")
+simulations<- as.data.frame(simulations)
+```
+
+```{r, echo= TRUE}
+simulations[c("simulation_mean")]<- apply(simulations, 1, mean)
+simulations[c("standard_normal_transformation_of_mean")]<- with(simulations, ((simulation_mean - pop_mean)/(pop_sd/(sqrt(n)))))
+simulations[c("simulation_variance")]<- apply(simulations, 1, var)
+```
+
+Below is the head of the resulting data frame, with the columns containing the simulations removed from view.
+
+
+```{r kable, echo= FALSE}
+library(knitr)
+kable(head(simulations[, 41:43]), digits=3)
+```
+
+### Results
+
+
+Below is a histogram of the 1000 simulation means; a black vertical line has been drawn through the hypothetical population mean (1/lambda = 5), 
+and a red vertical line has been drawn through the mean of the simulated means. The bell shape of the distribution indicates it is normal.
+
+```{r fig.width = 12, fig.height = 6, echo = FALSE}
+hist(simulations$simulation_mean, main = "Histogram of exponential distribution simulation means", ylab = "Frequency", xlab = "Simulation mean") 
+abline(v = (pop_mean))
+abline(v = mean(simulations$simulation_mean), col = "red")
+```
+
+Below is a histogram of the transformed means, in units equivalent to the x-axis of a standard normal distribution. The histogram is overlain by a standard normal curve.
+The bell-shaped distribution of the transformed simulation means indicates that the exponential distribution is normal. 
+
+
+```{r fig.width = 7, fig.height = 6, echo = FALSE}
+hist(simulations$standard_normal_transformation_of_mean, xlim=c(-4, 4), main = "Histogram of exponential distribution simulation means \n after transformation", ylab = "Frequency", xlab = "Transformed simulation mean")
+par(new=TRUE)
+x<- seq(from = -4, to = 4, by = 0.01 )
+y<- dnorm(x, mean=0, sd=1)
+plot(x,y,type="l", lwd=2,col="red", yaxt='n', xaxt='n', ann=FALSE)
+```
+
+
+Below is a density plot of the variances of the 1000 simulations; a black vertical line has been drawn through the hypothetical population variance ((1/lambda)^2 =25),
+and a red vertical line has been drawn through the mean of the simulated variances.
+
+```{r fig.width = 7, fig.height = 6, echo = FALSE}
+plot(density(simulations$simulation_variance), main = "Histogram of exponential distribution simulation variances", ylab = "Density", xlab = "Simulation variance")
+abline(v = (pop_sd) ^2)
+abline(v = mean(simulations$simulation_variance), col="red")
+```
+
+### Conclusions
+
+Below are the means of the simulated means and variances.
+
+```{r echo= TRUE}
+mean(simulations$simulation_mean)
+mean(simulations$simulation_variance)
+```
+
+These compare well to the hypothetical population mean (1/lambda = 5) and variance ((1/lambda)^2 = 25). The errors are as follows.
+
+Error in simulation mean:
+
+```{r echo = FALSE}
+paste(round(((5- mean(simulations$simulation_mean))/5)*100, 4), '%', sep = " ")
+```
+
+Error in simulation variance:
+
+```{r echo = FALSE}
+paste(round(((25- mean(simulations$simulation_variance))/25)*100, 4) , '%', sep = " ")
+```
+
+Below is the 95% confidence interval for the hypothetical population mean based on our simulations and the assumption of a normal distribution. 5 (the actual population mean)
+Lies in this range.
+
+```{r echo = TRUE}
+mean(simulations$simulation_mean) + (c(-1,1) * (qnorm(0.975)) * (sd(simulations$simulation_mean)/(sqrt(length(simulations)))))
+```
+
+The 0.9, 0.95 and 0.99 quantiles for the transformed means are shown below, in order to determine if the distribution emulates a standard normal distribution.
+
+```{r echo = TRUE}
+quantile(simulations$standard_normal_transformation_of_mean, c(0.9, 0.95, 0.99))
+```
+
+The equivalent quantiles for the standard normal are shown below.
+
+```{r echo = TRUE}
+qnorm(c(0.9, 0.95, 0.99), mean = 0, sd = 1)
+```
+
+The closeness of these sets of quantiles, and the bell-shaped distribution of our simulation means, provide strong evidence for the exponential distribution being approximately normal.
