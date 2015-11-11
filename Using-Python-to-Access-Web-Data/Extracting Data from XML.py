@@ -25,6 +25,3 @@ for top_comment in parsed_xml.findall('comments'):
 # Sum the numbers in the list
 		
 sum(numbers_list)
-
-
-
