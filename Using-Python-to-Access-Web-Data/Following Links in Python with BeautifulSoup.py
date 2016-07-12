@@ -4,7 +4,7 @@
 
 import urllib
 
-# Import http://www.pythonlearn.com/code/BeautifulSoup.py file and save in Python libraries folder ('C:\Anaconda\lib')
+# Import http://www.pythonlearn.com/code/BeautifulSoup.py file and save in Python libraries folder
 # Import BeautifulSoup code
 
 from BeautifulSoup import *
